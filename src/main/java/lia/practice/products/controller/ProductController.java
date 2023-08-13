@@ -83,13 +83,8 @@ public class ProductController {
     @PutMapping("/updateproducts/{id}")
     public Mono<ResponseEntity<Product>> updateProduct(@PathVariable String id, @RequestBody Product product) {
 //        return productService.updateProduct(id, product);
-        return productService.updateProductNoDuplicate(id, product); // Using the no duplicate name logic
+        return productService.updateProductNoDuplicate(id, product);
     }
-
-//    @DeleteMapping("/deleteproducts/{id}")
-//    public Mono<Void> deleteById(@PathVariable String id) {
-//        return productService.deleteById(id);
-//    }
 
     // delete by id with response
     @DeleteMapping("/deleteproducts/{id}")

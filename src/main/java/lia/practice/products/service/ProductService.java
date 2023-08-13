@@ -137,19 +137,6 @@ public class ProductService {
                 });
     }
 
-    public Mono<ResponseEntity<Product>> updateProduct(String id, Product product) {
-        return productRepository.findById(UUID.fromString(id))
-//        return productRepository.findById(id)
-                .flatMap(existingProduct -> {
-                    existingProduct.setName(product.getName());
-                    existingProduct.setDescription(product.getDescription());
-                    existingProduct.setWeight(product.getWeight());
-                    return productRepository.save(existingProduct);
-                })
-                .map(updatedProduct -> new ResponseEntity<>(updatedProduct, HttpStatus.OK))
-                .defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-
     public Mono<ResponseEntity<Product>> updateProductNoDuplicate(String id, Product product) {
         return productRepository.findById(UUID.fromString(id))
                 .flatMap(existingProduct ->
@@ -171,11 +158,6 @@ public class ProductService {
                 .map(updatedProduct -> new ResponseEntity<>(updatedProduct, HttpStatus.OK))
                 .defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
-
-//    public Mono<Void> deleteById(String id) {
-//        return productRepository.deleteById(UUID.fromString(id));
-////        return productRepository.deleteById(id);
-//    }
 
     // Delete by id with logic, error etc
     public Mono<Void> deleteById(String id) {
