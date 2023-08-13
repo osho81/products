@@ -170,12 +170,24 @@ public class ProductService {
     }
 
 
-    ////---- Methods used for multiple collection; orgId as pathvar ----////
-    ////---- Methods used for multiple collection; orgId as pathvar ----////
-    ////---- Methods used for multiple collection; orgId as pathvar ----////
-    ////---- Methods used for multiple collection; orgId as pathvar ----////
-    ////---- Methods used for multiple collection; orgId as pathvar ----////
-    ////---- Methods used for multiple collection; orgId as pathvar ----////
+    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
+    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
+    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
+    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
+    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
+
+
+    // Get all from specific coll, by orgid as pathvar, with error handle
+    public Flux<Product> getAllProductsFromSpecificColl(UUID orgId) {
+        String collectionName = "assessments_" + orgId;
+        return reactiveMongoTemplate.findAll(Product.class, collectionName);
+    }
+
+
+    public Mono<Product> getByIdFromSpecificColl(String id, UUID orgId) {
+        String collectionName = "assessments_" + orgId;
+        return reactiveMongoTemplate.findById(UUID.fromString(id), Product.class, collectionName);
+    }
 
     public Mono<Product> createProductInSpecificColl(Product product, UUID orgId) {
 
@@ -199,19 +211,6 @@ public class ProductService {
 
         // Use reactiveMongoTEMPLATE to save product into org-specific collection
         return reactiveMongoTemplate.save(tempProduct, collectionName); // second arg = collection to save to
-    }
-
-
-    public Flux<Product> getAllProductsFromSpecificColl(UUID orgId) {
-        logger.info("Get all products");
-        String collectionName = "assessments_" + orgId;
-        return reactiveMongoTemplate.findAll(Product.class, collectionName);
-    }
-
-
-    public Mono<Product> getByIdFromSpecificColl(String id, UUID orgId) {
-        String collectionName = "assessments_" + orgId;
-        return reactiveMongoTemplate.findById(UUID.fromString(id), Product.class, collectionName);
     }
 
 

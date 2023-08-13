@@ -55,7 +55,7 @@ public class ProductController {
         return productService.getById(id)
 //                .map(ResponseEntity::ok); // Short version
                 .map(product -> ResponseEntity.ok(product)); // longer version
-                    // error handle at service method instead
+        // error handle at service method instead
 //                .onErrorResume(ResponseStatusException.class, e -> Mono.just(ResponseEntity.status(e.getStatusCode()).build()));
     }
 
@@ -77,7 +77,7 @@ public class ProductController {
                 // Generic exception handle:
 //                .onErrorResume(throwable -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
                 // Specific exception handle with status and optional message:
-               .onErrorResume(ResponseStatusException.class, e -> Mono.just(ResponseEntity.status(e.getStatusCode()).build()));
+                .onErrorResume(ResponseStatusException.class, e -> Mono.just(ResponseEntity.status(e.getStatusCode()).build()));
     }
 
     @PutMapping("/updateproducts/{id}")
@@ -99,41 +99,34 @@ public class ProductController {
     }
 
 
-    ////---- Methods used for multiple collection; orgId as pathvar ----////
-    ////---- Methods used for multiple collection; orgId as pathvar ----////
-    ////---- Methods used for multiple collection; orgId as pathvar ----////
-    ////---- Methods used for multiple collection; orgId as pathvar ----////
-    ////---- Methods used for multiple collection; orgId as pathvar ----////
-    ////---- Methods used for multiple collection; orgId as pathvar ----////
+    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
+    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
+    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
+    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
+    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
 
-    @PostMapping("/createproducts/{orgId}") // Get orgId as pathVar
+
+    // Get all from specific coll, by orgid as pathvar, with reesponseentity, shorter version
+    @GetMapping("/orgidaspathvar/{orgId}")
+    public Mono<ResponseEntity<List<Product>>> getAllProductsFromSpecificColl(@PathVariable UUID orgId) {
+        return productService.getAllProductsFromSpecificColl(orgId)
+                .collectList() // Collect list from flux from service
+                .map(productList -> ResponseEntity.ok(productList));
+    }
+
+    // Get product by id & orgId as pathvars
+    @GetMapping("/idandorgidaspathvar/{id}/{orgId}")
+    public Mono<Product> getByIdFromSpecificColl(@PathVariable String id, @PathVariable UUID orgId) {
+        return productService.getByIdFromSpecificColl(id, orgId);
+    }
+
+    ////--- can also use the special get by id method, that loops all colls ----////
+
+    @PostMapping("/createproducts/{orgId}") // Pass and get orgId as pathVar
     @ResponseStatus(value = HttpStatus.CREATED)
     public Mono<Product> createProductInSpecificColl(@RequestBody Product product, @PathVariable UUID orgId) {
         // Use multiple/separated collections service method
         return productService.createProductInSpecificColl(product, orgId);
-    }
-
-
-    @GetMapping("/{orgId}")
-    public Flux<Product> getAllProductsFromSpecificColl(@PathVariable UUID orgId) {
-
-        logger.info("Entering getAllProductsFromSpecificColl() method");
-
-        Flux<Product> products = productService.getAllProductsFromSpecificColl(orgId);
-
-        products.doOnComplete(() -> logger.trace("Finished retrieving all products"))
-                .doOnError(error -> logger.error("Error occurred while retrieving products: {}", error.getMessage()))
-                .doOnNext(product -> logger.trace("Retrieved product: {}", product.getId()))
-                .subscribe();
-
-        logger.trace("Leaving getAllProductsFromSpecificColl() method");
-        return products;
-    }
-
-
-    @GetMapping("/productbyid/{id}/{orgId}")
-    public Mono<Product> getByIdFromSpecificColl(@PathVariable String id, @PathVariable UUID orgId) {
-        return productService.getByIdFromSpecificColl(id, orgId);
     }
 
 
@@ -195,22 +188,18 @@ public class ProductController {
     ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
 
 
-        @PostMapping("/createproducts/collnameaspathvar/{collName}")
-        @ResponseStatus(value = HttpStatus.CREATED)
-        public Mono<ResponseEntity<Product>> createProductInSpecificColl(@RequestBody Product product, @PathVariable String collName) {
+    @PostMapping("/createproducts/collnameaspathvar/{collName}")
+    @ResponseStatus(value = HttpStatus.CREATED)
+    public Mono<ResponseEntity<Product>> createProductInSpecificColl(@RequestBody Product product, @PathVariable String collName) {
 //            return productService.createProductInSpecificCollCollNamePathVar(product, collName)
-            return productService.createProductInSpecificCollCollNamePathVarNoDuplicate(product, collName)
-                    // On success return response incl. saved product
-                    .map(savedProduct -> ResponseEntity.status(HttpStatus.CREATED).body(savedProduct))
-                    // Generic exception handle:
+        return productService.createProductInSpecificCollCollNamePathVarNoDuplicate(product, collName)
+                // On success return response incl. saved product
+                .map(savedProduct -> ResponseEntity.status(HttpStatus.CREATED).body(savedProduct))
+                // Generic exception handle:
 //                .onErrorResume(throwable -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
-                    // Specific exception handle with status and optional message:
-                    .onErrorResume(ResponseStatusException.class, e -> Mono.just(ResponseEntity.status(e.getStatusCode()).build()));
-        }
-
-
-
-
+                // Specific exception handle with status and optional message:
+                .onErrorResume(ResponseStatusException.class, e -> Mono.just(ResponseEntity.status(e.getStatusCode()).build()));
+    }
 
 
 }
