@@ -56,8 +56,15 @@ public class ProductService {
     // Get by id with logic/error handle etc
     public Mono<Product> getById(String id) {
         return productRepository.findById(UUID.fromString(id))
+                // shorter version
                 // If not exist, the task switches from finding to erroring
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Product with id: " + id + " not found")));
+//                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Product with id: " + id + " not found")));
+
+            // Longer version
+            .switchIfEmpty(Mono.defer(() -> {
+            logger.error("Failed to find Product with id {}", id);
+            return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+        })).doOnSuccess(productResult -> logger.info("Found Product with {}", id));
     }
 
 

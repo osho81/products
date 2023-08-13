@@ -49,14 +49,17 @@ public class ProductController {
                 .map(assessmentList -> ResponseEntity.ok(assessmentList));
     }
 
-    // Get by id with response
+    // Get by id; with pathvar; with response
     @GetMapping("/productbyid/{id}")
     public Mono<ResponseEntity<Product>> getById(@PathVariable String id) {
         return productService.getById(id)
-                .map(ResponseEntity::ok);
+//                .map(ResponseEntity::ok); // Short version
+                .map(product -> ResponseEntity.ok(product)); // longer version
+                    // error handle at service method instead
 //                .onErrorResume(ResponseStatusException.class, e -> Mono.just(ResponseEntity.status(e.getStatusCode()).build()));
     }
 
+    // create product, with shortcut response
 //    @PostMapping("/createproducts")
 ////    @ResponseStatus(value = HttpStatus.CREATED) // Non-customized response
 //    public Mono<Product> createProduct(@RequestBody Product product) {
