@@ -11,12 +11,13 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.UUID;
 
 // Use UUID or String as paras/args depending on @Id datatype
 
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/api/v1")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:4200"}) // React & Angular
 public class ProductController {
 
@@ -41,33 +42,12 @@ public class ProductController {
     ////-------- Methods used for default collection  -------////
     ////-------- Methods used for default collection  -------////
 
-//    @GetMapping
-//    public Flux<Product> getAllProducts() {
-//        return productService.getAllProducts();
-//    }
-
-    // Example getAllProducts method with extensive trace example
-    @GetMapping
-    public Flux<Product> getAllProducts() {
-
-        logger.info("Entering getAllProducts() method");
-
-        Flux<Product> products = productService.getAllProducts();
-
-        products.doOnComplete(() -> logger.trace("Finished retrieving all products"))
-                .doOnError(error -> logger.error("Error occurred while retrieving products: {}", error.getMessage()))
-                .doOnNext(product -> logger.trace("Retrieved product: {}", product.getId()))
-                .subscribe();
-
-        logger.trace("Leaving getAllProducts() method");
-        return products;
+    @GetMapping("/products")
+    private Mono<ResponseEntity<List<Product>>> getAllMockassess() {
+        return productService.getAllProducts()
+                .collectList()
+                .map(assessmentList -> ResponseEntity.ok(assessmentList));
     }
-
-    // Basic get by id
-//    @GetMapping("/productbyid/{id}")
-//    public Mono<Product> getById(@PathVariable String id) {
-//        return productService.getById(id);
-//    }
 
     // Get by id with response
     @GetMapping("/productbyid/{id}")

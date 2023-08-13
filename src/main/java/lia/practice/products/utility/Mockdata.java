@@ -55,47 +55,47 @@ public class Mockdata {
 //            snackService.createSnackNoDuplicate(product4).subscribe();
 //            snackService.createSnackNoDuplicate(product5).subscribe();
 
-            // Use save to specific collections (for 1-4)
+            // Use save to specific collections
             productService.createInSpecificCollWithoutPathVarNoDuplicate(product1).subscribe();
             productService.createInSpecificCollWithoutPathVarNoDuplicate(product2).subscribe();
             productService.createInSpecificCollWithoutPathVarNoDuplicate(product3).subscribe();
             productService.createInSpecificCollWithoutPathVarNoDuplicate(product4).subscribe();
-            productService.createInSpecificCollWithoutPathVarNoDuplicate(product5).subscribe();
-//            snackService.createSnackNoDuplicate(product5).subscribe(); // product5 saved to default coll
+//            productService.createInSpecificCollWithoutPathVarNoDuplicate(product5).subscribe();
+            productService.createProductNoDuplicate(product5).subscribe(); // product5 saved to default coll
         };
 
     }
 
-    // Create method for MOCK data (message + empty error if snack already exists)
+    // Create method for MOCK data (message + empty error if product already exists)
     // (Could also be in Service Method, with some slight changes)
-//    public Mono<Product> createSnackNoDuplicateMock(Product snack) {
-//        return productRepository.existsByName(snack.getName())
+//    public Mono<Product> createSnackNoDuplicateMock(Product product) {
+//        return productRepository.existsByName(product.getName())
 //                .flatMap(exists -> {
 //                    if (exists) {
-////                        logger.info(snack.getName() + " already exist"); // Use logger
-//                        System.out.println(snack.getName() + " already exist");
+////                        logger.info(product.getName() + " already exist"); // Use logger
+//                        System.out.println(product.getName() + " already exist");
 //
 //                        return Mono.empty(); // Compulsory return here, so set to empty
 //
 //                    } else {
 //                        // Handle if date & time is null
 //                        String creationDateTime;
-//                        if (snack.getCreationDateTimeString() == null) {
+//                        if (product.getCreationDateTimeString() == null) {
 //                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"); // Specify format
 //                            String formattedDateTime = LocalDateTime.now().format(formatter); // Apply format
 //                            creationDateTime = formattedDateTime;
 //                        } else {
-//                            creationDateTime = snack.getCreationDateTimeString();
+//                            creationDateTime = product.getCreationDateTimeString();
 //                        }
 //
 //                        // uuid is provided in mock creation above
-//                        Product tempSnack = new Product(snack.getName(), snack.getFlavour(), snack.getWeight(),
-//                                snack.getProductId(), creationDateTime);
+//                        Product tempSnack = new Product(product.getName(), product.getFlavour(), product.getWeight(),
+//                                product.getProductId(), creationDateTime);
 //
-////                        logger.info(snack.getName() + " created");
-//                        System.out.println(snack.getName() + " created");
+////                        logger.info(product.getName() + " created");
+//                        System.out.println(product.getName() + " created");
 //
-//                        // Save each snack passed into this method
+//                        // Save each product passed into this method
 //                        return productRepository.save(tempSnack);
 //                    }
 //                });

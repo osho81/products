@@ -10,12 +10,14 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 
 // Use UUID or String as paras/args depending on @Id datatype
@@ -47,17 +49,9 @@ public class ProductService {
     ////-------- Methods used for default collection  -------////
     ////-------- Methods used for default collection  -------////
 
-
     public Flux<Product> getAllProducts() {
-        logger.info("Get all products");
         return productRepository.findAll();
     }
-
-    // Basic get by id
-//    public Mono<Product> getById(String id) {
-//        return productRepository.findById(UUID.fromString(id));
-////        return productRepository.findById(id);
-//    }
 
     // Get by id with logic/error handle etc
     public Mono<Product> getById(String id) {
@@ -68,7 +62,6 @@ public class ProductService {
 
 
     public Mono<Product> createProduct(Product product) {
-
         // If no date/time is provided, set current date
         String creationDateTime;
         if (product.getCreationDateTimeString() == null) {
