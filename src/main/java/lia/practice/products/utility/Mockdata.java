@@ -61,7 +61,8 @@ public class Mockdata {
             productService.createInSpecificCollWithoutPathVarNoDuplicate(product3).subscribe();
             productService.createInSpecificCollWithoutPathVarNoDuplicate(product4).subscribe();
 //            productService.createInSpecificCollWithoutPathVarNoDuplicate(product5).subscribe();
-            productService.createProductNoDuplicate(product5).subscribe(); // product5 saved to default coll
+            // product5 saved to default coll, "products" (if use this, comment product 5 above):
+            productService.createProductNoDuplicate(product5).subscribe();
         };
 
     }

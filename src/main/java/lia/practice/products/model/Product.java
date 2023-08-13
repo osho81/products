@@ -7,7 +7,7 @@ import java.util.UUID;
 
 // Annotation declaring this as a mongoDB entity to create records from,
 // and value is name of the collection
-@Document (value = "snacks")
+@Document (value = "products")
 //@Document // Better without value, when creating multiple collections
 public class Product {
 
