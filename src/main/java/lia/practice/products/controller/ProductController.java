@@ -59,7 +59,7 @@ public class ProductController {
 //                .onErrorResume(ResponseStatusException.class, e -> Mono.just(ResponseEntity.status(e.getStatusCode()).build()));
     }
 
-    // create product, with shortcut response
+    // create product (doesn't consider duplicates), with shortcut response
 //    @PostMapping("/createproducts")
 ////    @ResponseStatus(value = HttpStatus.CREATED) // Non-customized response
 //    public Mono<Product> createProduct(@RequestBody Product product) {

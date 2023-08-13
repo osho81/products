@@ -60,8 +60,10 @@ public class Mockdata {
             productService.createInSpecificCollWithoutPathVarNoDuplicate(product2).subscribe();
             productService.createInSpecificCollWithoutPathVarNoDuplicate(product3).subscribe();
             productService.createInSpecificCollWithoutPathVarNoDuplicate(product4).subscribe();
+
+            // If use this for product5, it will create a coll named assessments_null
 //            productService.createInSpecificCollWithoutPathVarNoDuplicate(product5).subscribe();
-            // product5 saved to default coll, "products" (if use this, comment product 5 above):
+            // If use this for product5, it will be saved to default coll, "products":
             productService.createProductNoDuplicate(product5).subscribe();
         };
 

@@ -10,14 +10,12 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.UUID;
 
 // Use UUID or String as paras/args depending on @Id datatype
@@ -41,7 +39,6 @@ public class ProductService {
     }
 
 
-
     ////-------- Methods used for default collection  -------////
     ////-------- Methods used for default collection  -------////
     ////-------- Methods used for default collection  -------////
@@ -60,14 +57,14 @@ public class ProductService {
                 // If not exist, the task switches from finding to erroring
 //                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Product with id: " + id + " not found")));
 
-            // Longer version
-            .switchIfEmpty(Mono.defer(() -> {
-            logger.error("Failed to find Product with id {}", id);
-            return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
-        })).doOnSuccess(productResult -> logger.info("Found Product with {}", id));
+                // Longer version
+                .switchIfEmpty(Mono.defer(() -> {
+                    logger.error("Failed to find Product with id {}", id);
+                    return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+                })).doOnSuccess(productResult -> logger.info("Found Product with {}", id));
     }
 
-
+    // create product (doesn't consider duplicates)
     public Mono<Product> createProduct(Product product) {
         // If no date/time is provided, set current date
         String creationDateTime;
@@ -88,7 +85,7 @@ public class ProductService {
 //        Product tempProduct = new Product(product.getName(), product.getFlavour(), product.getWeight(), UUID.randomUUID());
 
         // Example create product and provide productId-UUID & creation date
-        Product tempProduct = new Product(product.getName(), product.getFlavour(), product.getWeight(), UUID.randomUUID(), creationDateTime);
+        Product tempProduct = new Product(product.getName(), product.getDescription(), product.getWeight(), UUID.randomUUID(), creationDateTime);
 
         logger.info("Created a product");
         return productRepository.save(tempProduct);
@@ -126,12 +123,16 @@ public class ProductService {
 //                        Product tempProduct = new Product(product.getName(), product.getFlavour(), product.getWeight(), UUID.randomUUID(), creationDateTime);
 
                         // Provided uuid for productId from postman/frontend etc:
-                        Product tempProduct = new Product(product.getName(), product.getFlavour(), product.getWeight(), product.getProductId(), creationDateTime);
+                        Product tempProduct = new Product(product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
 
                         logger.info(product.getName() + " created");
 //                        System.out.println(product.getName() + " created");
 
-                        return productRepository.save(tempProduct);
+                        return productRepository.save(tempProduct)
+                                // On error (e.g. mongo db is shut down etc), log this error:
+                                .doOnError(error -> logger.error("Error creating Product: {}", error.getMessage()))
+                                .onErrorResume(error -> Mono.empty())
+                                .doOnSuccess(productResult -> logger.info("Created Product: {}", productResult));
                     }
                 });
     }
@@ -141,7 +142,7 @@ public class ProductService {
 //        return productRepository.findById(id)
                 .flatMap(existingProduct -> {
                     existingProduct.setName(product.getName());
-                    existingProduct.setFlavour(product.getFlavour());
+                    existingProduct.setDescription(product.getDescription());
                     existingProduct.setWeight(product.getWeight());
                     return productRepository.save(existingProduct);
                 })
@@ -160,7 +161,7 @@ public class ProductService {
 
                                     } else { // If name is free to use, update/save new fields
                                         existingProduct.setName(product.getName());
-                                        existingProduct.setFlavour(product.getFlavour());
+                                        existingProduct.setDescription(product.getDescription());
                                         existingProduct.setWeight(product.getWeight());
                                         // Test string date/time:
                                         existingProduct.setCreationDateTimeString(product.getCreationDateTimeString());
@@ -208,7 +209,7 @@ public class ProductService {
             creationDateTime = product.getCreationDateTimeString();
         }
 
-        Product tempProduct = new Product(product.getName(), product.getFlavour(), product.getWeight(), product.getProductId(), creationDateTime);
+        Product tempProduct = new Product(product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
 
         logger.info("Created a product");
 
@@ -252,7 +253,7 @@ public class ProductService {
             creationDateTime = product.getCreationDateTimeString();
         }
 
-        Product tempProduct = new Product(product.getOrgId(), product.getName(), product.getFlavour(), product.getWeight(), product.getProductId(), creationDateTime);
+        Product tempProduct = new Product(product.getOrgId(), product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
 
         logger.info("Created a product");
 
@@ -293,7 +294,7 @@ public class ProductService {
 //                        Product tempProduct = new Product(product.getName(), product.getFlavour(), product.getWeight(), product.getProductId(), creationDateTime);
 
                         // Also include orgId
-                        Product tempProduct = new Product(product.getOrgId(), product.getName(), product.getFlavour(), product.getWeight(), product.getProductId(), creationDateTime);
+                        Product tempProduct = new Product(product.getOrgId(), product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
 
 
 //                        logger.info(product.getName() + " created");
@@ -365,7 +366,7 @@ public class ProductService {
     ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
     ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
 
-        public Mono<Product> createProductInSpecificCollCollNamePathVar(Product product, String collName) {
+    public Mono<Product> createProductInSpecificCollCollNamePathVar(Product product, String collName) {
 
         String creationDateTime;
         if (product.getCreationDateTimeString() == null) {
@@ -377,7 +378,7 @@ public class ProductService {
         }
 
         // If used with entity that includes getOrgId, the orgId will just be null; ignore this
-        Product tempProduct = new Product(product.getName(), product.getFlavour(), product.getWeight(), product.getProductId(), creationDateTime);
+        Product tempProduct = new Product(product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
 
         logger.info("Created a product");
 
@@ -403,7 +404,7 @@ public class ProductService {
                             creationDateTime = product.getCreationDateTimeString();
                         }
 
-                        Product tempProduct = new Product(product.getName(), product.getFlavour(), product.getWeight(), product.getProductId(), creationDateTime);
+                        Product tempProduct = new Product(product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
 
                         logger.info(product.getName() + " created");
 
@@ -412,8 +413,6 @@ public class ProductService {
                     }
                 });
     }
-
-
 
 
     ////---- Utility methods for multiple collections; for all approaches ----////
@@ -450,7 +449,6 @@ public class ProductService {
                 .flatMap(collectionName -> reactiveMongoTemplate.exists(Query.query(Criteria.where("name").is(name)), Product.class, collectionName))
                 .any(exists -> exists); // Returns true if any of the collections includes this product
     }
-
 
 
 }

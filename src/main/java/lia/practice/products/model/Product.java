@@ -21,7 +21,7 @@ public class Product {
 
     private String name;
 
-    private String flavour;
+    private String description;
 
     private double weight;
 
@@ -34,28 +34,28 @@ public class Product {
     }
 
     // Constructor without productId
-    public Product(String name, String flavour, double weight) {
+    public Product(String name, String description, double weight) {
 //        this.id = id;
         this.id = UUID.randomUUID();
         this.name = name;
-        this.flavour = flavour;
+        this.description = description;
         this.weight = weight;
     }
 
     // Constructor including productId as well
-    public Product(String name, String flavour, double weight, UUID productId) {
+    public Product(String name, String description, double weight, UUID productId) {
         this.id = UUID.randomUUID(); // Example using db generated UUID
         this.name = name;
-        this.flavour = flavour;
+        this.description = description;
         this.weight = weight;
         this.productId = productId; // Example assigning provided UUID
     }
 
     // Constructor including DateTime as well
-    public Product(String name, String flavour, double weight, UUID productId, String creationDateTimeString) {
+    public Product(String name, String description, double weight, UUID productId, String creationDateTimeString) {
         this.id = UUID.randomUUID(); // Example using db generated UUID
         this.name = name;
-        this.flavour = flavour;
+        this.description = description;
         this.weight = weight;
         this.productId = productId; // Example assigning provided UUID
 //        this.creationDateTime = creationDateTime.withNano(0); // Remove nano seconds
@@ -64,11 +64,11 @@ public class Product {
     }
 
     // Constructor including orgId as well
-    public Product(UUID orgId, String name, String flavour, double weight, UUID productId, String creationDateTimeString) {
+    public Product(UUID orgId, String name, String description, double weight, UUID productId, String creationDateTimeString) {
         this.id = UUID.randomUUID();
         this.orgId = orgId; // orgId, used to create specific collection
         this.name = name;
-        this.flavour = flavour;
+        this.description = description;
         this.weight = weight;
         this.productId = productId; // Example assigning provided UUID
         this.creationDateTimeString = creationDateTimeString;
@@ -107,12 +107,12 @@ public class Product {
         this.name = name;
     }
 
-    public String getFlavour() {
-        return flavour;
+    public String getDescription() {
+        return description;
     }
 
-    public void setFlavour(String flavour) {
-        this.flavour = flavour;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public double getWeight() {
