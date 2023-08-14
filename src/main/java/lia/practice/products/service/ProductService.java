@@ -16,6 +16,8 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 // Use UUID or String as paras/args depending on @Id datatype
@@ -170,60 +172,11 @@ public class ProductService {
     }
 
 
-    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
-    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
-    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
-    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
-    ////---- Multiple collection approach 1: orgId from pathvar (no entity-field orgId)----////
-
-
-    // Get all from specific coll, by orgid as pathvar, with error handle
-    public Flux<Product> getAllProductsFromSpecificColl(UUID orgId) {
-        String collectionName = "assessments_" + orgId;
-        return reactiveMongoTemplate.findAll(Product.class, collectionName);
-    }
-
-
-    public Mono<Product> getByIdFromSpecificColl(String id, UUID orgId) {
-        String collectionName = "assessments_" + orgId;
-        return reactiveMongoTemplate.findById(UUID.fromString(id), Product.class, collectionName);
-    }
-
-    // Create into spec coll, as set in orgid in pathvar;
-    // doesn't consider duplicates;
-    public Mono<Product> createProductInSpecificColl(Product product, UUID orgId) {
-
-        // If no date/time is provided, set current date
-        String creationDateTime;
-        if (product.getCreationDateTimeString() == null) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"); // Specify format
-            String formattedDateTime = LocalDateTime.now().format(formatter); // Apply format
-            creationDateTime = formattedDateTime;
-
-            // Else set the date/time provided form postman/frontend
-        } else {
-            creationDateTime = product.getCreationDateTimeString();
-        }
-
-        // If orgid is null, it is saved in default/products colelction
-        // Even if orgId is passed, it is only stored if the second tempProduct hereunder is used
-//        Product tempProduct = new Product(product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
-        Product tempProduct = new Product(product.getOrgId(), product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
-
-        logger.info("Created a product");
-
-        String collectionName = "assessments_" + orgId; // Create specified collection for this orgId
-
-        // Use reactiveMongoTEMPLATE to save product into org-specific collection
-        return reactiveMongoTemplate.save(tempProduct, collectionName); // second arg = collection to save to
-    }
-
-
-    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
-    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
-    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
-    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
-    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
+    ////----  Multiple collection approach 1: orgId from ENTITY FIELD ----////
+    ////----  Multiple collection approach 1: orgId from ENTITY FIELD ----////
+    ////----  Multiple collection approach 1: orgId from ENTITY FIELD ----////
+    ////----  Multiple collection approach 1: orgId from ENTITY FIELD ----////
+    ////----  Multiple collection approach 1: orgId from ENTITY FIELD ----////
 
 
     // get all from a spec collection, by id, get orgid as entityfield via that id (using utility method)
@@ -231,7 +184,7 @@ public class ProductService {
         return findByIdInAllCollections(UUID.fromString(id)) // Find/get it by id, with utility method
                 .flatMapMany(foundProduct -> { // flatMapMany, mono to flux
                     // Use the Product's orgId to find its collection, get all products in it
-                    String collectionName = "assessments_" + foundProduct.getOrgId();
+                    String collectionName = "products_" + foundProduct.getOrgId();
                     return reactiveMongoTemplate.findAll(Product.class, collectionName);
                 });
     }
@@ -247,7 +200,7 @@ public class ProductService {
                         return findByIdInAllCollections(UUID.fromString(id))
                                 .flatMap(foundProduct -> {
                                     System.out.println("my print " + foundProduct);
-                                    String collectionName = "assessments_" + foundProduct.getOrgId();
+                                    String collectionName = "products_" + foundProduct.getOrgId();
                                     return reactiveMongoTemplate.findById(UUID.fromString(id), Product.class, collectionName)
                                             // If exsts, it will be found; so the following is a redundant error handle:
 //                                            .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -281,13 +234,14 @@ public class ProductService {
 
         logger.info("Created a product");
 
-        String collectionName = "assessments_" + product.getOrgId();
+        String collectionName = "products_" + product.getOrgId();
 
         // Use reactiveMongoTEMPLATE to save product into org-specific collection
         return reactiveMongoTemplate.save(tempProduct, collectionName); // second arg = collection to save to
     }
 
     // Checks if ealready exists in ANY of the collections
+    // (used e.g. by mock data)
     public Mono<Product> createInSpecificCollWithoutPathVarNoDuplicate(Product product) {
         // Check if product already exists in MongoDB
         // Use existByName method in this service class, that returns a boolean
@@ -324,19 +278,23 @@ public class ProductService {
 //                        logger.info(product.getName() + " created");
                         System.out.println(product.getName() + " created");
 
-                        String collectionName = "assessments_" + product.getOrgId();
+                        String collectionName = "products_" + product.getOrgId();
                         // Use reactiveMongoTEMPLATE to save product into org-specific collection
-                        return reactiveMongoTemplate.save(tempProduct, collectionName); // second arg = collection to save to
+                        return reactiveMongoTemplate.save(tempProduct, collectionName)
+                                .doOnError(error -> logger.error("Error creating Product: {}", error.getMessage()))
+                                .onErrorResume(error -> Mono.empty())
+                                .doOnSuccess(productResult -> logger.info("Created Product: {} in collection " + collectionName, productResult));
                     }
                 });
     }
 
 
-    // Delete by ID in ANY collection
+    // Delete by ID in ANY collection, simplified method
+    // (If orgId is null, don't use this delete method)
     public Mono<Void> deleteByIdInAllColl(String id) {
         return findByIdInAllCollections(UUID.fromString(id)) // Find/get it by id
                 .flatMap(foundProduct -> {
-                    String collectionName = "assessments_" + foundProduct.getOrgId();
+                    String collectionName = "products_" + foundProduct.getOrgId();
                     // Note that reactiveMongoTemlate delete in specific coll, uses remove()
                     // Also note that it requires the Product object, not its id
                     return reactiveMongoTemplate.remove(foundProduct, collectionName)
@@ -350,61 +308,140 @@ public class ProductService {
                 .then();
     }
 
-
-    ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
-    ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
-    ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
-    ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
-    ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
-    ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
-
-    public Mono<Product> createProductInSpecificCollCollNamePathVar(Product product, String collName) {
-
-        String creationDateTime;
-        if (product.getCreationDateTimeString() == null) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            String formattedDateTime = LocalDateTime.now().format(formatter);
-            creationDateTime = formattedDateTime;
-        } else {
-            creationDateTime = product.getCreationDateTimeString();
-        }
-
-        // If used with entity that includes getOrgId, the orgId will just be null; ignore this
-        Product tempProduct = new Product(product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
-
-        logger.info("Created a product");
-
-        String collectionName = collName; // Just for readability and clarification
-
-        return reactiveMongoTemplate.save(tempProduct, collectionName); // second arg = collection to save to
+    // Improved delete method, checks thouroughly if exists, then deletes etc.
+    // Use for any approach;
+    // Delete by id; use customized find collection by Product id, to specify collection
+    // Find collectionName and passes it in as coll to delete from
+    public Mono<Void> deleteByIdUnknownColl(String id) {
+        return existsByIdInAllCollections(UUID.fromString(id))// Check if exists
+                .flatMap(exists -> {
+                    if (exists) { // If exists, delete it, log this, and return empty mono (as it should)
+                        return findByIdInAllCollections(UUID.fromString(id)) // Find & get it by id
+                                .flatMap(foundProduct -> {
+                                    logger.info("I got Product " + foundProduct);
+                                    // Use our customized method to find the foundProduct' collection (mono-string)
+                                    return findCollectionNameById(UUID.fromString(id))
+                                            .flatMap(collectionName -> {
+                                                logger.info("I got collection " + collectionName);
+                                                return reactiveMongoTemplate.remove(foundProduct, collectionName)
+                                                        // Coll name as string
+                                                        // Error handling
+                                                        .doOnSuccess(result -> logger.info("Product with id {} has been deleted", id))
+                                                        .doOnError(error -> {
+                                                            logger.error("Failed to delete product with id {}: {}", id, error.getMessage());
+                                                            throw new RuntimeException("Failed to delete product");
+                                                        })
+                                                        .then();
+                                            });
+                                });
+                    } else { // If doesn't exist, log this, and return error (see onErrorResume part)
+                        logger.info("**No Assessment found with id {}", id);
+                        return Mono.error(new RuntimeException("No Assessment found with id " + id));
+                    }
+                })
+                .onErrorResume(error -> { // Handle eventual error from previous step
+                    logger.error("Failed to delete Product with id {}: {}", id, error.getMessage());
+                    return Mono.error(new RuntimeException("Failed to delete Assessment"));
+                })
+                // Return an empty Mono on completion; besides eventual previous error returned above
+                .then();
     }
 
-    public Mono<Product> createProductInSpecificCollCollNamePathVarNoDuplicate(Product product, String collName) {
+
+    ////---- Multiple collection approach 2: orgId from pathvar (no entity-field orgId)----////
+    ////---- Multiple collection approach 2: orgId from pathvar (no entity-field orgId)----////
+    ////---- Multiple collection approach 2: orgId from pathvar (no entity-field orgId)----////
+    ////---- Multiple collection approach 2: orgId from pathvar (no entity-field orgId)----////
+    ////---- Multiple collection approach 2: orgId from pathvar (no entity-field orgId)----////
+
+
+    // Get all from specific coll, by orgid as pathvar, with error handle
+    public Flux<Product> getAllProductsFromSpecificColl(UUID orgId) {
+        String collectionName = "products_" + orgId;
+        return reactiveMongoTemplate.findAll(Product.class, collectionName);
+    }
+
+
+    public Mono<Product> getByIdFromSpecificColl(String id, UUID orgId) {
+        String collectionName = "products_" + orgId;
+        return reactiveMongoTemplate.findById(UUID.fromString(id), Product.class, collectionName);
+    }
+
+    // Create into spec coll, as set in orgid in pathvar;
+    public Mono<Product> createProductInSpecificColl(Product product, UUID orgId) {
+
         return existsByNameInAllCollections(product.getName())
                 .flatMap(exists -> {
                     if (exists) {
-//                        return Mono.error(new RuntimeException("Duplicate product found"));
+
                         logger.info(product.getName() + " already exist");
-                        return Mono.empty(); // Compulsory return here, so set to empty
+
+                        return Mono.empty();
                     } else {
+
+
+                        // If no date/time is provided, set current date
                         String creationDateTime;
                         if (product.getCreationDateTimeString() == null) {
-                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                            String formattedDateTime = LocalDateTime.now().format(formatter);
+                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"); // Specify format
+                            String formattedDateTime = LocalDateTime.now().format(formatter); // Apply format
                             creationDateTime = formattedDateTime;
+
+                            // Else set the date/time provided form postman/frontend
                         } else {
                             creationDateTime = product.getCreationDateTimeString();
                         }
 
-                        Product tempProduct = new Product(product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
+                        // Note: the passed in orgId is set as coll, not eventual body orgId
+                        // If orgid is null, it is saved in default/products colelction
+                        // Use if orgId entity field should be null:
+//                        Product tempProduct = new Product(product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
+                        // Use if orgId entity field should be set to the provided orgId in the pathvar
+                        Product tempProduct = new Product(orgId, product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
+                        // Use if orgId entity field is provided in req body:
+//                        Product tempProduct = new Product(product.getOrgId(), product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
 
-                        logger.info(product.getName() + " created");
+                        logger.info("Created a product");
 
-                        String collectionName = collName;
-                        return reactiveMongoTemplate.save(tempProduct, collectionName);
+                        String collectionName = "products_" + orgId; // Create specified collection for this orgId
+
+                        // Use reactiveMongoTEMPLATE to save product into org-specific collection
+                        return reactiveMongoTemplate.save(tempProduct, collectionName); // second arg = collection to save to
+
                     }
                 });
     }
+
+    //----- DELETE BY ID, USE the imrpoved DELETE METHOD deleteByIdUnknownColl() -----//
+
+
+    ////---- Other eventually needed endpoints (Might be moved to own service class ----////
+    ////---- Other eventually needed endpoints (Might be moved to own service class ----////
+    ////---- Other eventually needed endpoints (Might be moved to own service class ----////
+    ////---- Other eventually needed endpoints (Might be moved to own service class ----////
+    ////---- Other eventually needed endpoints (Might be moved to own service class ----////
+
+
+    // Get all by collection name (so NOT constructed as products_ + ....)
+    public Flux<Product> getAllCollNamePathvar(String collName) {
+        String collecstionName = collName; // Redundant step, but pedagogic
+        return reactiveMongoTemplate.findAll(Product.class, collName);
+    }
+
+    // Return list of all collection names (and log them for control check)
+    public Mono<List<String>> getAllCollectionNames() {
+        Flux<String> collectionNames = reactiveMongoTemplate.getCollectionNames();
+        List<String> collectionNameList = new ArrayList<>();
+
+        return collectionNames
+                .doOnNext(collectionName -> logger.info(collectionName))// Control log
+                .collectList() // Collect from flux...
+                .doOnSuccess(collectionNameList::addAll) // ...add them into the created ArrayList
+                .thenReturn(collectionNameList); // Return the ArrayList
+    }
+
+
+
 
 
     ////---- Utility methods for multiple collections; for all approaches ----////
@@ -439,7 +476,21 @@ public class ProductService {
                 .doOnNext(collectionName -> System.out.println("Collection name*: " + collectionName)) // Control print
                 // Check if exists in each of the retrieved collections:
                 .flatMap(collectionName -> reactiveMongoTemplate.exists(Query.query(Criteria.where("name").is(name)), Product.class, collectionName))
-                .any(exists -> exists); // Returns true if any of the collections includes this product
+                .any(exists -> exists); // Returns exists/true if any of the collections includes this product
+    }
+
+    // Return collection for any given Product id
+    public Mono<String> findCollectionNameById(UUID id) {
+        Flux<String> collectionNames = reactiveMongoTemplate.getCollectionNames();
+        return collectionNames
+                .flatMap(collectionName ->
+                        // Loop through each collection, search for Product id (note: entity class as second arg)
+                        reactiveMongoTemplate.findOne(Query.query(Criteria.where("id").is(id)), Product.class, collectionName)
+                                .map(obj -> collectionName)
+                                .switchIfEmpty(Mono.empty())
+                )
+                .next() // Construct and return first found collection with this Product id
+                .doOnSuccess(collectionName -> logger.info("Collection name found for Product ID {}: {}", id, collectionName));
     }
 
 

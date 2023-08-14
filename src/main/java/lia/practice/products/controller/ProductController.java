@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -68,7 +67,7 @@ public class ProductController {
 //    }
 
 
-    // Create products with response
+    // Create products with response, and no duplicates
     @PostMapping("/createproducts")
     public Mono<ResponseEntity<Product>> createProduct(@RequestBody Product product) {
         return productService.createProductNoDuplicate(product)
@@ -122,11 +121,14 @@ public class ProductController {
 
     ////--- can also use the special get by id method, that loops all colls ----////
 
+
+    // Create product, in spec coll; use
     @PostMapping("/createproducts/{orgId}") // Pass and get orgId as pathVar
-    @ResponseStatus(value = HttpStatus.CREATED)
-    public Mono<Product> createProductInSpecificColl(@RequestBody Product product, @PathVariable UUID orgId) {
+    public Mono<ResponseEntity<Product>> createProductInSpecificColl(@RequestBody Product product, @PathVariable UUID orgId) {
         // Use multiple/separated collections service method
-        return productService.createProductInSpecificColl(product, orgId);
+        return productService.createProductInSpecificColl(product, orgId)
+                .map(saveProduct -> ResponseEntity.status(HttpStatus.CREATED).body(saveProduct))
+                .defaultIfEmpty(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
     }
 
 
@@ -145,7 +147,9 @@ public class ProductController {
                 .map(productList -> ResponseEntity.ok(productList));
     }
 
-    @GetMapping("/productbyid/orgidasentityfield/{id}")
+    // Get by id from specific collection (without knowing the collection name)
+    // get orgid from provided id; find product in that orgid-coll
+    @GetMapping("/productbyid/unknowncoll/{id}")
     public Mono<ResponseEntity<Product>> getByIdFromSpecificColl(@PathVariable String id) {
         return productService.getByIdFromSpecificColl(id)
                 .map(ResponseEntity::ok)
@@ -154,16 +158,22 @@ public class ProductController {
 
     // Create method that saves into specific collection;
     // no orgId pathvar; uses getOrgId() from reqbody
-    @PostMapping("/createproducts/specificcoll") // No orgId pathVar; will use getOrgId
-    @ResponseStatus(value = HttpStatus.CREATED) // Simplified response
-    public Mono<Product> createProductInSpecificCollWithoutPathVar(@RequestBody Product product) {
+    @PostMapping("/createproducts/reqbody") // No orgId pathVar; will use getOrgId
+    public Mono<ResponseEntity<Product>> createProductInSpecificCollWithoutPathVar(@RequestBody Product product) {
         // Use multiple/separated collections service method
-        return productService.createProductInSpecificCollWithoutPathVar(product);
+//        return productService.createProductInSpecificCollWithoutPathVar(product) // duplicates allowed
+        return productService.createInSpecificCollWithoutPathVarNoDuplicate(product) // No duplicates
+                .map(saveProduct -> ResponseEntity.status(HttpStatus.CREATED).body(saveProduct))
+                .defaultIfEmpty(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+
     }
 
-    @DeleteMapping("/deleteproducts/specificcoll/{id}")
+    // Delete by ID in ANY collection (except null)
+    // (If orgId is null, don't use this delete method)
+    @DeleteMapping("/deleteproducts/orgidasentityfield/{id}")
     public Mono<ResponseEntity<Void>> deleteByIdInAllColl(@PathVariable String id) {
-        return productService.deleteByIdInAllColl(id)
+//        return productService.deleteByIdInAllColl(id)
+        return productService.deleteByIdUnknownColl(id)
                 .then(Mono.just(ResponseEntity.noContent().build()))
                 .onErrorResume(error -> {
                     logger.error("Failed to delete product with id {}: {}", id, error.getMessage());
@@ -173,26 +183,30 @@ public class ProductController {
     }
 
 
-    ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
-    ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
-    ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
-    ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
-    ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
-    ////---- multiple coll; collName as arg; use with e.g. manually created db coll ----////
+    ////---- Other eventually needed endpoints (Might be moved to own service class ----////
+    ////---- Other eventually needed endpoints (Might be moved to own service class ----////
+    ////---- Other eventually needed endpoints (Might be moved to own service class ----////
+    ////---- Other eventually needed endpoints (Might be moved to own service class ----////
+    ////---- Other eventually needed endpoints (Might be moved to own service class ----////
 
 
-    @PostMapping("/createproducts/collnameaspathvar/{collName}")
-    @ResponseStatus(value = HttpStatus.CREATED)
-    public Mono<ResponseEntity<Product>> createProductInSpecificColl(@RequestBody Product product, @PathVariable String collName) {
-//            return productService.createProductInSpecificCollCollNamePathVar(product, collName)
-        return productService.createProductInSpecificCollCollNamePathVarNoDuplicate(product, collName)
-                // On success return response incl. saved product
-                .map(savedProduct -> ResponseEntity.status(HttpStatus.CREATED).body(savedProduct))
-                // Generic exception handle:
-//                .onErrorResume(throwable -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
-                // Specific exception handle with status and optional message:
-                .onErrorResume(ResponseStatusException.class, e -> Mono.just(ResponseEntity.status(e.getStatusCode()).build()));
+    // Get all by collection name (so NOT constructed as products_ + ....)
+    @GetMapping("/products/collnameaspathvar/{collName}")
+    public Mono<ResponseEntity<List<Product>>> getAllCollNamePathvar(@PathVariable String collName) {
+        return productService.getAllCollNamePathvar(collName)
+                .collectList()
+                .map(assessmentList -> ResponseEntity.ok(assessmentList));
     }
+
+
+    // Return all collection in database
+    @GetMapping("/collections")
+    public Mono<ResponseEntity<List<String>>> getAllCollectionNames() {
+        return productService.getAllCollectionNames()
+                .map(productList -> ResponseEntity.ok(productList));
+    }
+
+
 
 
 }
