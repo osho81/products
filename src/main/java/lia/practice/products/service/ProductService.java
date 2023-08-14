@@ -225,8 +225,10 @@ public class ProductService {
     ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
     ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
 
+
+    // get all from a spec collection, by id, get orgid as entityfield via that id (using utility method)
     public Flux<Product> getAllProductsFromSpecificColl(String id) {
-        return findByIdInAllCollections(UUID.fromString(id)) // Find/get it by id
+        return findByIdInAllCollections(UUID.fromString(id)) // Find/get it by id, with utility method
                 .flatMapMany(foundProduct -> { // flatMapMany, mono to flux
                     // Use the Product's orgId to find its collection, get all products in it
                     String collectionName = "assessments_" + foundProduct.getOrgId();
@@ -245,7 +247,7 @@ public class ProductService {
                                     System.out.println("my print " + foundProduct);
                                     String collectionName = "assessments_" + foundProduct.getOrgId();
                                     return reactiveMongoTemplate.findById(UUID.fromString(id), Product.class, collectionName)
-                                            // If exsts, it will be found; redundant error:
+                                            // If exsts, it will be found; so the following is a redundant error handle:
 //                                            .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
 //                                                    "Product with id" + id + " not found in collection " + collectionName)))
                                             .map(product -> foundProduct);

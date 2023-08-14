@@ -136,23 +136,16 @@ public class ProductController {
     ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
     ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
 
-    @GetMapping("/{id}") // Product id (not orgId in this version)
-    public Flux<Product> getAllProductsFromSpecificColl(@PathVariable String id) {
 
-        logger.info("Entering getAllProductsFromSpecificColl() method");
-
-        Flux<Product> products = productService.getAllProductsFromSpecificColl(id);
-
-        products.doOnComplete(() -> logger.trace("Finished retrieving all products"))
-                .doOnError(error -> logger.error("Error occurred while retrieving products: {}", error.getMessage()))
-                .doOnNext(product -> logger.trace("Retrieved product: {}", product.getId()))
-                .subscribe();
-
-        logger.info("Leaving getAllProductsFromSpecificColl() method");
-        return products;
+    // get all from a spec collection, by id, get orgid as entityfield via the provided id
+    @GetMapping("/orgidasentityfield/{id}") // Product id (not orgId in this version)
+    public Mono<ResponseEntity<List<Product>>> getAllProductsFromSpecificColl(@PathVariable String id) {
+        return productService.getAllProductsFromSpecificColl(id)
+                .collectList() // Collect list from flux from service
+                .map(productList -> ResponseEntity.ok(productList));
     }
 
-    @GetMapping("/productbyid/specificcoll/{id}")
+    @GetMapping("/productbyid/orgidasentityfield/{id}")
     public Mono<ResponseEntity<Product>> getByIdFromSpecificColl(@PathVariable String id) {
         return productService.getByIdFromSpecificColl(id)
                 .map(ResponseEntity::ok)
