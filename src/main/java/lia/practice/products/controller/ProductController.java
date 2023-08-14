@@ -130,20 +130,11 @@ public class ProductController {
     }
 
 
-    ////---- Methods used for multiple collection; orgId as entity field ----////
-    ////---- Methods used for multiple collection; orgId as entity field ----////
-    ////---- Methods used for multiple collection; orgId as entity field ----////
-    ////---- Methods used for multiple collection; orgId as entity field ----////
-    ////---- Methods used for multiple collection; orgId as entity field ----////
-    ////---- Methods used for multiple collection; orgId as entity field ----////
-
-
-    @PostMapping("/createproducts/specificcoll") // No orgId pathVar; will use getOrgId
-    @ResponseStatus(value = HttpStatus.CREATED)
-    public Mono<Product> createProductInSpecificCollWithoutPathVar(@RequestBody Product product) {
-        // Use multiple/separated collections service method
-        return productService.createProductInSpecificCollWithoutPathVar(product);
-    }
+    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
+    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
+    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
+    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
+    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
 
     @GetMapping("/{id}") // Product id (not orgId in this version)
     public Flux<Product> getAllProductsFromSpecificColl(@PathVariable String id) {
@@ -166,6 +157,13 @@ public class ProductController {
         return productService.getByIdFromSpecificColl(id)
                 .map(ResponseEntity::ok)
                 .onErrorResume(ResponseStatusException.class, e -> Mono.just(ResponseEntity.status(e.getStatusCode()).build()));
+    }
+
+    @PostMapping("/createproducts/specificcoll") // No orgId pathVar; will use getOrgId
+    @ResponseStatus(value = HttpStatus.CREATED)
+    public Mono<Product> createProductInSpecificCollWithoutPathVar(@RequestBody Product product) {
+        // Use multiple/separated collections service method
+        return productService.createProductInSpecificCollWithoutPathVar(product);
     }
 
     @DeleteMapping("/deleteproducts/specificcoll/{id}")

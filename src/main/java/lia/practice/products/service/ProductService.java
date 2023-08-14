@@ -189,6 +189,8 @@ public class ProductService {
         return reactiveMongoTemplate.findById(UUID.fromString(id), Product.class, collectionName);
     }
 
+    // Create into spec coll, as set in orgid in pathvar;
+    // doesn't consider duplicates;
     public Mono<Product> createProductInSpecificColl(Product product, UUID orgId) {
 
         // If no date/time is provided, set current date
@@ -203,7 +205,10 @@ public class ProductService {
             creationDateTime = product.getCreationDateTimeString();
         }
 
-        Product tempProduct = new Product(product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
+        // If orgid is null, it is saved in default/products colelction
+        // Even if orgId is passed, it is only stored if the second tempProduct hereunder is used
+//        Product tempProduct = new Product(product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
+        Product tempProduct = new Product(product.getOrgId(), product.getName(), product.getDescription(), product.getWeight(), product.getProductId(), creationDateTime);
 
         logger.info("Created a product");
 
@@ -214,12 +219,45 @@ public class ProductService {
     }
 
 
-    ////---- Methods used for multiple collection; orgId as entity field ----////
-    ////---- Methods used for multiple collection; orgId as entity field ----////
-    ////---- Methods used for multiple collection; orgId as entity field ----////
-    ////---- Methods used for multiple collection; orgId as entity field ----////
-    ////---- Methods used for multiple collection; orgId as entity field ----////
-    ////---- Methods used for multiple collection; orgId as entity field ----////
+    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
+    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
+    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
+    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
+    ////----  Multiple collection approach 2: orgId from ENTITY FIELD ----////
+
+    public Flux<Product> getAllProductsFromSpecificColl(String id) {
+        return findByIdInAllCollections(UUID.fromString(id)) // Find/get it by id
+                .flatMapMany(foundProduct -> { // flatMapMany, mono to flux
+                    // Use the Product's orgId to find its collection, get all products in it
+                    String collectionName = "assessments_" + foundProduct.getOrgId();
+                    return reactiveMongoTemplate.findAll(Product.class, collectionName);
+                });
+    }
+
+    public Mono<Product> getByIdFromSpecificColl(String id) {
+        return existsByIdInAllCollections(UUID.fromString(id)) // Call method for checking if exist
+                .flatMap(exists -> { // Check if exists could be redundant; enough to find by id
+                    System.out.println("exists: " + exists);
+                    if (exists) {
+                        // Call the method for finding it in all collections (and get it)
+                        return findByIdInAllCollections(UUID.fromString(id))
+                                .flatMap(foundProduct -> {
+                                    System.out.println("my print " + foundProduct);
+                                    String collectionName = "assessments_" + foundProduct.getOrgId();
+                                    return reactiveMongoTemplate.findById(UUID.fromString(id), Product.class, collectionName)
+                                            // If exsts, it will be found; redundant error:
+//                                            .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
+//                                                    "Product with id" + id + " not found in collection " + collectionName)))
+                                            .map(product -> foundProduct);
+                                });
+                    } else {
+                        return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Product with id: " + id + " not found"));
+                    }
+                })
+                // Optional printout of eventual error
+                .doOnError(error -> logger.error("Error while retrieving product: {}", error.getMessage()));
+    }
+
 
     public Mono<Product> createProductInSpecificCollWithoutPathVar(Product product) {
         // If no date/time is provided, set current date
@@ -288,38 +326,6 @@ public class ProductService {
                 });
     }
 
-    public Flux<Product> getAllProductsFromSpecificColl(String id) {
-        return findByIdInAllCollections(UUID.fromString(id)) // Find/get it by id
-                .flatMapMany(foundProduct -> { // Not flatMapMany, mono to flux
-                    // Use the Product's orgId to find its collection, get all products in it
-                    String collectionName = "assessments_" + foundProduct.getOrgId();
-                    return reactiveMongoTemplate.findAll(Product.class, collectionName);
-                });
-    }
-
-    public Mono<Product> getByIdFromSpecificColl(String id) {
-        return existsByIdInAllCollections(UUID.fromString(id)) // Call method for checking if exist
-                .flatMap(exists -> { // Check if exists could be redundant; enough to find by id
-                    System.out.println("exists: " + exists);
-                    if (exists) {
-                        // Call the method for finding it in all collections (and get it)
-                        return findByIdInAllCollections(UUID.fromString(id))
-                                .flatMap(foundProduct -> {
-                                    System.out.println("my print " + foundProduct);
-                                    String collectionName = "assessments_" + foundProduct.getOrgId();
-                                    return reactiveMongoTemplate.findById(UUID.fromString(id), Product.class, collectionName)
-                                            // If exsts, it will be found; redundant error:
-//                                            .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
-//                                                    "Product with id" + id + " not found in collection " + collectionName)))
-                                            .map(product -> foundProduct);
-                                });
-                    } else {
-                        return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Product with id: " + id + " not found"));
-                    }
-                })
-                // Optional printout of eventual error
-                .doOnError(error -> logger.error("Error while retrieving product: {}", error.getMessage()));
-    }
 
     // Delete by ID in ANY collection
     public Mono<Void> deleteByIdInAllColl(String id) {
