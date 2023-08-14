@@ -152,8 +152,10 @@ public class ProductController {
                 .onErrorResume(ResponseStatusException.class, e -> Mono.just(ResponseEntity.status(e.getStatusCode()).build()));
     }
 
+    // Create method that saves into specific collection;
+    // no orgId pathvar; uses getOrgId() from reqbody
     @PostMapping("/createproducts/specificcoll") // No orgId pathVar; will use getOrgId
-    @ResponseStatus(value = HttpStatus.CREATED)
+    @ResponseStatus(value = HttpStatus.CREATED) // Simplified response
     public Mono<Product> createProductInSpecificCollWithoutPathVar(@RequestBody Product product) {
         // Use multiple/separated collections service method
         return productService.createProductInSpecificCollWithoutPathVar(product);

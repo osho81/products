@@ -236,6 +236,8 @@ public class ProductService {
                 });
     }
 
+    // Get by id from specific collection (without knowing the collection name)
+    // get orgid from provided id; find product in that orgid-coll
     public Mono<Product> getByIdFromSpecificColl(String id) {
         return existsByIdInAllCollections(UUID.fromString(id)) // Call method for checking if exist
                 .flatMap(exists -> { // Check if exists could be redundant; enough to find by id
@@ -260,7 +262,8 @@ public class ProductService {
                 .doOnError(error -> logger.error("Error while retrieving product: {}", error.getMessage()));
     }
 
-
+    // Create method that saves into specific collection;
+    // no orgId pathvar; uses getOrgId() from reqbody
     public Mono<Product> createProductInSpecificCollWithoutPathVar(Product product) {
         // If no date/time is provided, set current date
         String creationDateTime;
