@@ -190,6 +190,13 @@ public class ProductController {
     ////---- Other eventually needed endpoints (Might be moved to own service class ----////
 
 
+    // Get all products from all collection, specific colls as well as default coll
+    @GetMapping("/allfromallcolls")
+    public Mono<ResponseEntity<List<Product>>> getAllFromAllColls() {
+        return productService.getAllFromAllColls()
+                .map(productList -> ResponseEntity.ok(productList));
+    }
+
     // Get all by collection name (so NOT constructed as products_ + ....)
     @GetMapping("/products/collnameaspathvar/{collName}")
     public Mono<ResponseEntity<List<Product>>> getAllCollNamePathvar(@PathVariable String collName) {
@@ -205,6 +212,13 @@ public class ProductController {
         return productService.getAllCollectionNames()
                 .map(productList -> ResponseEntity.ok(productList));
     }
+
+    // TODO:
+    // Eventually add follwoing methods:
+    // - save a list of products
+    // - copy coll to another coll
+    // - aggregation methods, i.e. calculate total or average weight for products in a coll
+
 
 
 

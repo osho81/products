@@ -8,7 +8,7 @@
 		<version>3.0.2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>lia.practice</groupId>
+	<groupId>com.osho81</groupId>
 	<artifactId>products</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>products</name>

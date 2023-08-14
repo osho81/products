@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.lang.reflect.MalformedParameterizedTypeException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -421,6 +422,15 @@ public class ProductService {
     ////---- Other eventually needed endpoints (Might be moved to own service class ----////
     ////---- Other eventually needed endpoints (Might be moved to own service class ----////
 
+
+    // Get all products from all collection, specific colls as well as default coll
+    public Mono<List<Product>> getAllFromAllColls() { // Returns Mono, since collected and returned as one list
+        Flux<String> collectionNames = reactiveMongoTemplate.getCollectionNames();
+
+        return collectionNames
+                .flatMap(collectionName -> reactiveMongoTemplate.findAll(Product.class, collectionName))
+                .collectList(); // Collect all Product objects into a list, to return
+    }
 
     // Get all by collection name (so NOT constructed as products_ + ....)
     public Flux<Product> getAllCollNamePathvar(String collName) {
